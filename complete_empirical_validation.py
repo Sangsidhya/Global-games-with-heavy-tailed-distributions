@@ -33,7 +33,7 @@ class SymmetricGPD:
     f(x) = (1/(2sigma_scale)) * (1 + xi|x|/sigma_scale)^(-1/xi - 1)
     """
     
-   class SymmetricGPD:
+
     def __init__(self, xi: float, sigma_scale: float):
         if xi >= 0.5:
             raise ValueError("xi must be < 0.5 for finite variance")
