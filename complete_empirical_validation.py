@@ -33,7 +33,6 @@ class SymmetricGPD:
     f(x) = (1/(2sigma_scale)) * (1 + xi|x|/sigma_scale)^(-1/xi - 1)
     """
     
-
     def __init__(self, xi: float, sigma_scale: float):
         if xi >= 0.5:
             raise ValueError("xi must be < 0.5 for finite variance")
@@ -244,22 +243,16 @@ def find_switching_equilibria(posterior: PosteriorGPD, y: float,
     # Compute indifference equation value for each k
     indiff_values = []
     for k in k_grid:
-        # Posterior mean for player at threshold
         mu_post = posterior.alpha_I * k + posterior.alpha_tau * y
-        # Expected proportion investing (opponents with signals > k)
-        # Under symmetric strategies, this is phi((k - mu_post)/delta) evaluated at k
-        expected_fraction = 1 - stats.norm.cdf((k - mu_post) / posterior.Delta)
-        # Probability opponents invest (given cutoff k)
-        # Under symmetric strategies, this equals phi((k - mu_post)/delta)
-        #prob_invest = 1 - stats.norm.cdf((k - mu_post) / posterior.Delta)
         lhs = mu_post
         rhs = stats.norm.cdf((k-mu_post) / posterior.Delta)  # Note: flipped sign
         indiff_values.append(lhs - rhs)
-        # Find sign changes (zero crossings)
+        
     indiff_values = np.array(indiff_values)
     sign_changes = np.where(np.diff(np.sign(indiff_values)))[0]
+    
     for idx in sign_changes:
-        # Refine with bisection
+        # Refine with bisection (PROPERLY INDENTED)
         k_low = k_grid[idx]
         k_high = k_grid[idx + 1]
         
@@ -278,15 +271,7 @@ def find_switching_equilibria(posterior: PosteriorGPD, y: float,
                     equilibria.append(k_eq)
         except Exception:
             pass
-        # Payoff to investing at threshold
-        #payoff = mu_post + prob_invest - 1
-        
-        # Check if indifferent (within tolerance)
-       # if abs(payoff) < 0.01:
-            # Check it's not duplicate
-            #if len(equilibria) == 0 or min(abs(k - e) for e in equilibria) > 0.05:
-               # equilibria.append(k)
-    
+            
     return equilibria
 
 
