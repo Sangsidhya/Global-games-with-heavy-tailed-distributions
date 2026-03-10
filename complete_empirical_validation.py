@@ -260,14 +260,14 @@ def find_switching_equilibria(posterior: PosteriorGPD, y: float,
     sign_changes = np.where(np.diff(np.sign(indiff_values)))[0]
     for idx in sign_changes:
         # Refine with bisection
-          k_low = k_grid[idx]
-          k_high = k_grid[idx + 1]
+        k_low = k_grid[idx]
+        k_high = k_grid[idx + 1]
         
-    def equation(k):
+        def equation(k):
             mu = posterior.alpha_I * k + posterior.alpha_tau * y
             return mu - stats.norm.cdf((k-mu) / posterior.Delta)
-        
-    try:
+            
+        try:
             from scipy.optimize import brentq
             k_eq = brentq(equation, k_low, k_high)
             
@@ -276,7 +276,7 @@ def find_switching_equilibria(posterior: PosteriorGPD, y: float,
                 # Check not duplicate
                 if len(equilibria) == 0 or min(abs(k_eq - e) for e in equilibria) > 0.01:
                     equilibria.append(k_eq)
-    except:
+        except Exception:
             pass
         # Payoff to investing at threshold
         #payoff = mu_post + prob_invest - 1
