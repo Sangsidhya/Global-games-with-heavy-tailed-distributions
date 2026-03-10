@@ -33,15 +33,8 @@ class SymmetricGPD:
     f(x) = (1/(2sigma_scale)) * (1 + xi|x|/sigma_scale)^(-1/xi - 1)
     """
     
+   class SymmetricGPD:
     def __init__(self, xi: float, sigma_scale: float):
-        """
-        Parameters:
-        -----------
-        xi : float
-            Shape parameter (tail index), must be < 0.5
-        sigma_scale : float
-            Scale parameter
-        """
         if xi >= 0.5:
             raise ValueError("xi must be < 0.5 for finite variance")
         if xi < 0:
@@ -52,8 +45,8 @@ class SymmetricGPD:
         self.xi = xi
         self.sigma_scale = sigma_scale
         
-        # Compute variance
-        self.variance = (4 * sigma_scale**2) / ((1 - xi) * (1 - 2*xi))
+        # Corrected variance formula to match mathematical proof
+        self.variance = (2 * sigma_scale**2) / ((1 - xi) * (1 - 2*xi))
         
     def pdf(self, x: np.ndarray) -> np.ndarray:
         """PDF of symmetric GPD"""
@@ -223,9 +216,7 @@ class UniquenessResult:
 
 def compute_gamma_eff(xi: float, sigma_scale: float, tau: float) -> float:
     """
-    Compute gamma_GPD parameter
-    
-    gamma_GPD = (sigma⁴_eff / tao⁴)  / ((sigma²_eff + sigma²_noise)]* [(tao² - sigma²_eff)²])
+    Compute gamma_GPD parameter strictly matching the theoretical derivation.
     """
     gpd = SymmetricGPD(xi, sigma_scale)
     posterior = PosteriorGPD(gpd, tau)
@@ -233,12 +224,11 @@ def compute_gamma_eff(xi: float, sigma_scale: float, tau: float) -> float:
     sigma_eff_sq = posterior.sigma_eff_sq
     sigma_noise_sq = posterior.sigma_noise_sq
     
-    numerator = sigma_eff_sq**2 * (tau**2 - sigma_eff_sq)**2
-    denominator = tau**4 * (sigma_eff_sq + sigma_noise_sq)
+    # Corrected to match theoretical derivation: gamma < 2pi
+    numerator = sigma_eff_sq**2
+    denominator = ((tau**2 - sigma_eff_sq)**2) * (sigma_eff_sq + sigma_noise_sq)
     
     return numerator / denominator
-
-
 def find_switching_equilibria(posterior: PosteriorGPD, y: float,
                                k_grid: Optional[np.ndarray] = None) -> List[float]:
     """
@@ -449,28 +439,8 @@ def test_laplace_quality(xi: float, sigma_ratio: float,
 
 def subsample_bootstrap_ci(data: np.ndarray, m: int, B: int = 999,
                             alpha: float = 0.05) -> Tuple[float, float, float]:
-    """
-    Subsample bootstrap confidence interval for median
     
-    Parameters:
-    -----------
-    data : np.ndarray
-        Observed signals
-    m : int
-        Subsample size (typically n^0.7)
-    B : int
-        Number of bootstrap replications
-    alpha : float
-        Significance level
-        
-    Returns:
-    --------
-    theta_hat : float
-        Sample median
-    ci_lower : float
-    ci_upper : float
-    """
-    n = len(data)
+    n = len(data) # Ensure n is defined
     theta_hat_n = np.median(data)
     
     # Bootstrap replications
@@ -480,16 +450,16 @@ def subsample_bootstrap_ci(data: np.ndarray, m: int, B: int = 999,
         subsample_idx = np.random.choice(n, size=m, replace=False)
         theta_hat_m = np.median(data[subsample_idx])
         
-        # Scaled difference
+        # Scaled difference (this remains sqrt(m))
         bootstrap_stats[b] = np.sqrt(m) * (theta_hat_m - theta_hat_n)
     
     # Compute quantiles
     q_lower = np.quantile(bootstrap_stats, alpha/2)
     q_upper = np.quantile(bootstrap_stats, 1 - alpha/2)
     
-    # Invert to get CI
-    ci_lower = theta_hat_n - q_upper / np.sqrt(m)
-    ci_upper = theta_hat_n - q_lower / np.sqrt(m)
+    # Invert to get CI - CORRECTED to scale by sqrt(n)
+    ci_lower = theta_hat_n - (q_upper / np.sqrt(n))
+    ci_upper = theta_hat_n - (q_lower / np.sqrt(n))
     
     return theta_hat_n, ci_lower, ci_upper
 
